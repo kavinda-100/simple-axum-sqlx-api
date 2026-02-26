@@ -1,4 +1,4 @@
-CREATE TABLE vehicles (
+CREATE TABLE IF NOT EXISTS vehicles (
     id SERIAL PRIMARY KEY, -- Auto-incrementing primary key
     make VARCHAR(255) NOT NULL, -- Manufacturer of the vehicle
     model VARCHAR(255) NOT NULL, -- Model of the vehicle
