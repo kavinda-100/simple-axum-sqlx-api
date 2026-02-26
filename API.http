@@ -1,0 +1,10 @@
+@baseUrl = http://localhost:5000
+
+## Home route
+GET /
+GET http://localhost:5000/
+
+
+## Get all vehicles
+GET /vehicles
+GET http://localhost:5000/vehicles

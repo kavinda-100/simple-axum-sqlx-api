@@ -3,6 +3,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool, FromRow};
+use dotenv::dotenv;
 use std::env;
 
 // VehicleInput struct for deserializing incoming JSON data for creating/updating vehicles
@@ -29,8 +30,8 @@ struct Vehicle {
 
 #[tokio::main]
 async fn main() {
-    
     // Load environment variables from .env file
+    dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env");
     let port = env::var("PORT").unwrap_or_else(|_| "5000".to_string()).parse::<u16>().expect("PORT must be a valid number");
 
