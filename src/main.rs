@@ -8,7 +8,7 @@ use std::env;
 
 // VehicleInput struct for deserializing incoming JSON data for creating/updating vehicles
 #[derive(Deserialize)]
-struct VehicleInput {
+struct VehiclePayload {
     make: String,
     model: String,
     year: i32,
@@ -46,6 +46,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root_handler))
         .route("/vehicles", get(get_all_vehicles))
+        .route("/vehicles", post(create_vehicle))
         .with_state(pool);
 
     // Start the server
@@ -57,8 +58,10 @@ async fn main() {
 /**
  * Root handler for the base route, returns a welcome message.
  */
-async fn root_handler() -> Json<String> {
-    Json("Welcome to the Vehicle API".into())
+async fn root_handler() -> Json<serde_json::Value> {
+    Json(serde_json::json!({
+        "message": "Welcome to the Vehicle API!"
+    }))
 }
 
 /**
@@ -71,4 +74,24 @@ async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<Vec<Vehicle
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(vehicles))
+}
+
+/**
+ * Handler for creating a new vehicle, accepts JSON input and inserts a new record into the database.
+ */
+async fn create_vehicle(State(pool): State<PgPool>, Json(payload): Json<VehiclePayload>) -> Result<Json<Vehicle>, StatusCode> {
+
+    // Insert the new vehicle into the database and return the created record
+    let vehicle = sqlx::query_as::<_, Vehicle>(
+        "INSERT INTO vehicles (make, model, year, vin) VALUES ($1, $2, $3, $4) RETURNING *"
+    )
+    .bind(&payload.make)
+    .bind(&payload.model)
+    .bind(payload.year)
+    .bind(&payload.vin)
+    .fetch_one(&pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;   
+
+    Ok(Json(vehicle))
 }

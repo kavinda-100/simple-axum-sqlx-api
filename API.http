@@ -1,10 +1,24 @@
 @baseUrl = http://localhost:5000
 
 ## Home route
-GET /
 GET http://localhost:5000/
 
+###
 
 ## Get all vehicles
-GET /vehicles
 GET http://localhost:5000/vehicles
+
+###
+
+## Create a new vehicle
+POST http://localhost:5000/vehicles
+Content-Type: application/json
+
+{
+    "make": "Toyota",
+    "model": "Corolla",
+    "year": 2020,
+    "vin": "1HGBH41JXMN109186"
+}
+
+###
