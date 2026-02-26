@@ -42,4 +42,21 @@ async fn main() {
         .connect(&database_url)
         .await
         .expect("Failed to connect to the database");
+
+    // Build the application with routes
+    let app = Router::new()
+        .route("/", get(root_handler))
+        .with_state(pool);
+
+    // Start the server
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
+    println!("Server running on http://0.0.0.0:{}", port);
+    axum::serve(listener, app).await.unwrap();
+}
+
+/**
+ * Root handler for the base route, returns a welcome message.
+ */
+async fn root_handler() -> Json<String> {
+    Json("Welcome to the Vehicle API".into())
 }
