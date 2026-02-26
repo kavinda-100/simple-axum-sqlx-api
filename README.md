@@ -8,4 +8,6 @@ This is a simple example of a Rust API using Axum and SQLx to manage a list of v
 - Axum
 - Tokio
 - SQLx
+- Serde
+- serde_json
 - PostgreSQL
