@@ -1,7 +1,5 @@
 use axum::{
-    routing::{get, post},
-    http::StatusCode,
-    Json, Router,
+    Json, Router, extract::State, http::StatusCode, routing::{get, post}
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool, FromRow};
@@ -46,6 +44,7 @@ async fn main() {
     // Build the application with routes
     let app = Router::new()
         .route("/", get(root_handler))
+        .route("/vehicles", get(get_all_vehicles))
         .with_state(pool);
 
     // Start the server
@@ -59,4 +58,16 @@ async fn main() {
  */
 async fn root_handler() -> Json<String> {
     Json("Welcome to the Vehicle API".into())
+}
+
+/**
+ * Handler for getting all vehicles, returns a list of all vehicles in the database.
+ */
+async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<Vec<Vehicle>>, StatusCode> {
+    let vehicles = sqlx::query_as::<_, Vehicle>("SELECT * FROM vehicles")
+        .fetch_all(&pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(vehicles))
 }
