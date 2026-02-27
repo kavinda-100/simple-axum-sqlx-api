@@ -9,10 +9,13 @@ use crate::utils::response::ApiResponse;
 /**
  * Root handler for the base route, returns a welcome message.
  */
-pub async fn root_handler() -> Json<serde_json::Value> {
-    Json(serde_json::json!({
-        "message": "Welcome to the Vehicle API!"
-    }))
+pub async fn root_handler() -> Json<ApiResponse<()>> {
+    Json(ApiResponse::new(
+        true, 
+        StatusCode::OK, 
+        "Welcome to the Vehicle API!".to_string(), 
+        None::<()>
+    ))
 }
 
 /**
@@ -25,15 +28,23 @@ pub async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<ApiResp
     // Fetch all vehicles from the database and return them as JSON
     let vehicles = sqlx::query_as::<_, Vehicle>("SELECT * FROM vehicles")
         .fetch_all(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .await;
 
-    Ok(Json(ApiResponse::new(
-        true, 
-        StatusCode::OK, 
-        "Successfully fetched all vehicles".to_string(), 
-        Some(vehicles)
-    )))
+        match vehicles {
+            Ok(vehicles) => {
+                Ok(Json(ApiResponse::new(
+                    true, 
+                    StatusCode::OK, 
+                    "Successfully fetched all vehicles".to_string(), 
+                    Some(vehicles)
+                )))
+            },
+            Err(e) => {
+                eprintln!("Error fetching vehicles: {}", e);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        }
+    
 }
 
 /**
@@ -55,15 +66,26 @@ pub async fn create_vehicle(
     .bind(payload.year)
     .bind(&payload.vin)
     .fetch_one(&pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;   
+    .await;
 
-    Ok(Json(ApiResponse::new(
-        true, 
-        StatusCode::CREATED, 
-        "Vehicle created successfully".to_string(), 
-        Some(vehicle)
-    )))
+    match vehicle {
+        Ok(vehicle) => {
+            Ok(Json(ApiResponse::new(
+                true, 
+                StatusCode::CREATED, 
+                "Vehicle created successfully".to_string(), 
+                Some(vehicle)
+            )))
+        },
+        Err(e) => {
+            eprintln!("Error creating vehicle: {}", e);
+            if e.to_string().contains("duplicate key value violates unique constraint") {
+                return Err(StatusCode::CONFLICT);
+            }
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    
+    }
 }
 
 /**
@@ -77,15 +99,21 @@ pub async fn get_vehicle_by_id(
     let vehicle = sqlx::query_as::<_, Vehicle>("SELECT * FROM vehicles WHERE id = $1")
         .bind(id)
         .fetch_one(&pool)
-        .await
-        .map_err(|_| StatusCode::NOT_FOUND)?;
+        .await;
 
-    Ok(Json(ApiResponse::new(
-        true, 
-        StatusCode::OK, 
-        "Vehicle found".to_string(), 
-        Some(vehicle)
-    )))
+    match vehicle {
+        Ok(vehicle) => {
+            Ok(Json(ApiResponse::new(
+                true, 
+                StatusCode::OK, 
+                "Vehicle fetched successfully".to_string(), 
+                Some(vehicle)
+            )))
+        },
+        Err(e) => {
+            eprintln!("Error fetching vehicle with ID {}: {}", id, e);
+            return Err(StatusCode::NOT_FOUND);
+        }}
 }
 
 /**
@@ -106,15 +134,22 @@ pub async fn update_vehicle(
     .bind(&payload.vin)
     .bind(id)
     .fetch_one(&pool)
-    .await
-    .map_err(|_| StatusCode::NOT_FOUND)?;
+    .await;
 
-    Ok(Json(ApiResponse::new(
-        true, 
-        StatusCode::OK, 
-        "Vehicle updated successfully".to_string(), 
-        Some(vehicle)
-    )))
+    match vehicle {
+        Ok(vehicle) => {
+            Ok(Json(ApiResponse::new(
+                true, 
+                StatusCode::OK, 
+                "Vehicle updated successfully".to_string(), 
+                Some(vehicle)
+            )))
+        },
+        Err(e) => {
+            eprintln!("Error updating vehicle with ID {}: {}", id, e);
+            return Err(StatusCode::NOT_FOUND);
+        }
+    }
 }
 
 /**
