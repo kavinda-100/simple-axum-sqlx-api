@@ -66,6 +66,7 @@ pub async fn create_vehicle(
         ))),
         Err(e) => {
             eprintln!("Error creating vehicle: {}", e);
+            // Check if the error is due to a unique constraint violation (e.g., duplicate VIN)
             if e.to_string()
                 .contains("duplicate key value violates unique constraint")
             {
@@ -151,6 +152,7 @@ pub async fn delete_vehicle(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    // Check if any rows were affected (i.e., if the vehicle was found and deleted)
     if result.rows_affected() == 0 {
         return Err(StatusCode::NOT_FOUND);
     }
