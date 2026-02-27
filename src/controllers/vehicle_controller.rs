@@ -1,5 +1,7 @@
 use axum::{
-    Json, extract::{Path, State}, http::StatusCode
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
 };
 use sqlx::PgPool;
 
@@ -7,21 +9,11 @@ use crate::models::vehicle::{Vehicle, VehiclePayload};
 use crate::utils::response::ApiResponse;
 
 /**
- * Root handler for the base route, returns a welcome message.
- */
-pub async fn root_handler() -> Json<ApiResponse<()>> {
-    Json(ApiResponse::new(
-        true, 
-        StatusCode::OK, 
-        "Welcome to the Vehicle API!".to_string(), 
-        None::<()>
-    ))
-}
-
-/**
  * Handler for getting all vehicles, returns a list of all vehicles in the database.
  */
-pub async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<ApiResponse<Vec<Vehicle>>>, StatusCode> {
+pub async fn get_all_vehicles(
+    State(pool): State<PgPool>,
+) -> Result<Json<ApiResponse<Vec<Vehicle>>>, StatusCode> {
     // for debugging purposes, log that we're fetching vehicles
     println!("Fetching all vehicles from the database...");
 
@@ -30,36 +22,33 @@ pub async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<ApiResp
         .fetch_all(&pool)
         .await;
 
-        match vehicles {
-            Ok(vehicles) => {
-                Ok(Json(ApiResponse::new(
-                    true, 
-                    StatusCode::OK, 
-                    "Successfully fetched all vehicles".to_string(), 
-                    Some(vehicles)
-                )))
-            },
-            Err(e) => {
-                eprintln!("Error fetching vehicles: {}", e);
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
+    match vehicles {
+        Ok(vehicles) => Ok(Json(ApiResponse::new(
+            true,
+            StatusCode::OK,
+            "Successfully fetched all vehicles".to_string(),
+            Some(vehicles),
+        ))),
+        Err(e) => {
+            eprintln!("Error fetching vehicles: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
-    
+    }
 }
 
 /**
  * Handler for creating a new vehicle, accepts JSON input and inserts a new record into the database.
  */
 pub async fn create_vehicle(
-    State(pool): State<PgPool>, 
-    Json(payload): Json<VehiclePayload>
+    State(pool): State<PgPool>,
+    Json(payload): Json<VehiclePayload>,
 ) -> Result<Json<ApiResponse<Vehicle>>, StatusCode> {
     // Log the incoming payload for debugging purposes
     println!("Received payload for creating vehicle: {:?}", payload);
 
     // Insert the new vehicle into the database and return the created record
     let vehicle = sqlx::query_as::<_, Vehicle>(
-        "INSERT INTO vehicles (make, model, year, vin) VALUES ($1, $2, $3, $4) RETURNING *"
+        "INSERT INTO vehicles (make, model, year, vin) VALUES ($1, $2, $3, $4) RETURNING *",
     )
     .bind(&payload.make)
     .bind(&payload.model)
@@ -69,22 +58,21 @@ pub async fn create_vehicle(
     .await;
 
     match vehicle {
-        Ok(vehicle) => {
-            Ok(Json(ApiResponse::new(
-                true, 
-                StatusCode::CREATED, 
-                "Vehicle created successfully".to_string(), 
-                Some(vehicle)
-            )))
-        },
+        Ok(vehicle) => Ok(Json(ApiResponse::new(
+            true,
+            StatusCode::CREATED,
+            "Vehicle created successfully".to_string(),
+            Some(vehicle),
+        ))),
         Err(e) => {
             eprintln!("Error creating vehicle: {}", e);
-            if e.to_string().contains("duplicate key value violates unique constraint") {
+            if e.to_string()
+                .contains("duplicate key value violates unique constraint")
+            {
                 return Err(StatusCode::CONFLICT);
             }
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
-    
     }
 }
 
@@ -92,8 +80,8 @@ pub async fn create_vehicle(
  * Handler for get a single vehicle by ID, accepts a path parameter and returns the corresponding vehicle record.
  */
 pub async fn get_vehicle_by_id(
-    State(pool): State<PgPool>, 
-    Path(id): Path<i32>
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>,
 ) -> Result<Json<ApiResponse<Vehicle>>, StatusCode> {
     // Fetch the vehicle with the specified ID from the database
     let vehicle = sqlx::query_as::<_, Vehicle>("SELECT * FROM vehicles WHERE id = $1")
@@ -102,27 +90,26 @@ pub async fn get_vehicle_by_id(
         .await;
 
     match vehicle {
-        Ok(vehicle) => {
-            Ok(Json(ApiResponse::new(
-                true, 
-                StatusCode::OK, 
-                "Vehicle fetched successfully".to_string(), 
-                Some(vehicle)
-            )))
-        },
+        Ok(vehicle) => Ok(Json(ApiResponse::new(
+            true,
+            StatusCode::OK,
+            "Vehicle fetched successfully".to_string(),
+            Some(vehicle),
+        ))),
         Err(e) => {
             eprintln!("Error fetching vehicle with ID {}: {}", id, e);
             return Err(StatusCode::NOT_FOUND);
-        }}
+        }
+    }
 }
 
 /**
  * Handler for updating an existing vehicle, accepts a path parameter for the vehicle ID and JSON input for the updated data.
  */
 pub async fn update_vehicle(
-    State(pool): State<PgPool>, 
-    Path(id): Path<i32>, 
-    Json(payload): Json<VehiclePayload>
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>,
+    Json(payload): Json<VehiclePayload>,
 ) -> Result<Json<ApiResponse<Vehicle>>, StatusCode> {
     // Update the vehicle with the specified ID in the database and return the updated record
     let vehicle = sqlx::query_as::<_, Vehicle>(
@@ -137,14 +124,12 @@ pub async fn update_vehicle(
     .await;
 
     match vehicle {
-        Ok(vehicle) => {
-            Ok(Json(ApiResponse::new(
-                true, 
-                StatusCode::OK, 
-                "Vehicle updated successfully".to_string(), 
-                Some(vehicle)
-            )))
-        },
+        Ok(vehicle) => Ok(Json(ApiResponse::new(
+            true,
+            StatusCode::OK,
+            "Vehicle updated successfully".to_string(),
+            Some(vehicle),
+        ))),
         Err(e) => {
             eprintln!("Error updating vehicle with ID {}: {}", id, e);
             return Err(StatusCode::NOT_FOUND);
@@ -156,8 +141,8 @@ pub async fn update_vehicle(
  * Handler for deleting a vehicle, accepts a path parameter for the vehicle ID and deletes the corresponding record from the database.
  */
 pub async fn delete_vehicle(
-    State(pool): State<PgPool>, 
-    Path(id): Path<i32>
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>,
 ) -> Result<Json<ApiResponse<()>>, StatusCode> {
     // Delete the vehicle with the specified ID from the database
     let result = sqlx::query("DELETE FROM vehicles WHERE id = $1")
@@ -168,12 +153,12 @@ pub async fn delete_vehicle(
 
     if result.rows_affected() == 0 {
         return Err(StatusCode::NOT_FOUND);
-    }   
+    }
 
     Ok(Json(ApiResponse::new(
-        true, 
-        StatusCode::NO_CONTENT, 
-        "Vehicle deleted successfully".to_string(), 
-        None
+        true,
+        StatusCode::NO_CONTENT,
+        "Vehicle deleted successfully".to_string(),
+        None,
     )))
 }

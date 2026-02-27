@@ -1,10 +1,9 @@
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::env;
 
 /// Establishes a connection to the PostgreSQL database
 pub async fn establish_connection() -> PgPool {
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set in .env");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env");
 
     // Create a connection pool to the PostgreSQL database
     let pool = PgPoolOptions::new()

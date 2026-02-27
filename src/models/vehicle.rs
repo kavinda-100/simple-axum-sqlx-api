@@ -1,6 +1,6 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use chrono::NaiveDateTime;
 
 // VehiclePayload struct for deserializing incoming JSON data for creating/updating vehicles
 #[derive(Deserialize, Debug)]
