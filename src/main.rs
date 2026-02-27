@@ -1,3 +1,4 @@
+// imports
 use axum::{
     Json, Router, extract::{Path, State}, http::StatusCode, routing::{get, post}
 };
@@ -6,6 +7,10 @@ use sqlx::{postgres::PgPoolOptions, PgPool, FromRow};
 use dotenv::dotenv;
 use std::env;
 use chrono::NaiveDateTime;
+
+// modules
+mod utils;
+use utils::response::ApiResponse;
 
 // VehicleInput struct for deserializing incoming JSON data for creating/updating vehicles
 #[derive(Deserialize, Debug)]
@@ -77,7 +82,7 @@ async fn root_handler() -> Json<serde_json::Value> {
 /**
  * Handler for getting all vehicles, returns a list of all vehicles in the database.
  */
-async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<Vec<Vehicle>>, StatusCode> {
+async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<ApiResponse<Vec<Vehicle>>>, StatusCode> {
     // for debugging purposes, log that we're fetching vehicles
     println!("Fetching all vehicles from the database...");
 
@@ -87,13 +92,14 @@ async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<Vec<Vehicle
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(vehicles))
+    Ok(Json(ApiResponse::new(true, StatusCode::OK, "Successfully fetched all vehicles".to_string(), Some(vehicles))))
+
 }
 
 /**
  * Handler for creating a new vehicle, accepts JSON input and inserts a new record into the database.
  */
-async fn create_vehicle(State(pool): State<PgPool>, Json(payload): Json<VehiclePayload>) -> Result<Json<Vehicle>, StatusCode> {
+async fn create_vehicle(State(pool): State<PgPool>, Json(payload): Json<VehiclePayload>) -> Result<Json<ApiResponse<Vehicle>>, StatusCode> {
 
     // Log the incoming payload for debugging purposes
     println!("Received payload for creating vehicle: {:?}", payload);
@@ -110,13 +116,13 @@ async fn create_vehicle(State(pool): State<PgPool>, Json(payload): Json<VehicleP
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;   
 
-    Ok(Json(vehicle))
+    Ok(Json(ApiResponse::new(true, StatusCode::CREATED, "Vehicle created successfully".to_string(), Some(vehicle))))
 }
 
 /**
  * Handler for get a single vehicle by ID, accepts a path parameter and returns the corresponding vehicle record.
  */
-async fn get_vehicle_by_id(State(pool): State<PgPool>, axum::extract::Path(id): axum::extract::Path<i32>) -> Result<Json<Vehicle>, StatusCode> {
+async fn get_vehicle_by_id(State(pool): State<PgPool>, axum::extract::Path(id): axum::extract::Path<i32>) -> Result<Json<ApiResponse<Vehicle>>, StatusCode> {
     // Fetch the vehicle with the specified ID from the database
     let vehicle = sqlx::query_as::<_, Vehicle>("SELECT * FROM vehicles WHERE id = $1")
         .bind(id)
@@ -124,13 +130,13 @@ async fn get_vehicle_by_id(State(pool): State<PgPool>, axum::extract::Path(id): 
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
 
-    Ok(Json(vehicle))
+    Ok(Json(ApiResponse::new(true, StatusCode::OK, "Vehicle found".to_string(), Some(vehicle))))
 }
 
 /**
  * Handler for updating an existing vehicle, accepts a path parameter for the vehicle ID and JSON input for the updated data.
  */
-async fn update_vehicle(State(pool): State<PgPool>, Path(id): Path<i32>, Json(payload): Json<VehiclePayload>) -> Result<Json<Vehicle>, StatusCode> {
+async fn update_vehicle(State(pool): State<PgPool>, Path(id): Path<i32>, Json(payload): Json<VehiclePayload>) -> Result<Json<ApiResponse<Vehicle>>, StatusCode> {
     // Update the vehicle with the specified ID in the database and return the updated record
     let vehicle = sqlx::query_as::<_, Vehicle>(
         "UPDATE vehicles SET make = $1, model = $2, year = $3, vin = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *"
@@ -144,13 +150,13 @@ async fn update_vehicle(State(pool): State<PgPool>, Path(id): Path<i32>, Json(pa
     .await
     .map_err(|_| StatusCode::NOT_FOUND)?;
 
-    Ok(Json(vehicle))
+    Ok(Json(ApiResponse::new(true, StatusCode::OK, "Vehicle updated successfully".to_string(), Some(vehicle))))
 }
 
 /**
  * Handler for deleting a vehicle, accepts a path parameter for the vehicle ID and deletes the corresponding record from the database.
  */
-async fn delete_vehicle(State(pool): State<PgPool>, Path(id): Path<i32>) -> Result<StatusCode, StatusCode> {
+async fn delete_vehicle(State(pool): State<PgPool>, Path(id): Path<i32>) -> Result<Json<ApiResponse<()>>, StatusCode> {
     // Delete the vehicle with the specified ID from the database
     let result = sqlx::query("DELETE FROM vehicles WHERE id = $1")
         .bind(id)
@@ -162,6 +168,6 @@ async fn delete_vehicle(State(pool): State<PgPool>, Path(id): Path<i32>) -> Resu
         return Err(StatusCode::NOT_FOUND);
     }   
     else {
-        return Ok(StatusCode::NO_CONTENT);
+        return Ok(Json(ApiResponse::new(true, StatusCode::NO_CONTENT, "Vehicle deleted successfully".to_string(), None)));
     }
 }
