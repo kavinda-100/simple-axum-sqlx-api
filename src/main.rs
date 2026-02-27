@@ -1,5 +1,5 @@
 use axum::{
-    Json, Router, extract::State, http::StatusCode, routing::{get, post}
+    Json, Router, extract::{Path, State}, http::StatusCode, routing::{get, post}
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool, FromRow};
@@ -55,6 +55,8 @@ async fn main() {
         .route("/vehicles", get(get_all_vehicles))
         .route("/vehicles", post(create_vehicle))
         .route("/vehicles/{id}", get(get_vehicle_by_id))
+        .route("/vehicles/{id}", post(update_vehicle))
+        .route("/vehicles/{id}", axum::routing::delete(delete_vehicle))
         .with_state(pool);
 
     // Start the server
@@ -123,4 +125,43 @@ async fn get_vehicle_by_id(State(pool): State<PgPool>, axum::extract::Path(id): 
         .map_err(|_| StatusCode::NOT_FOUND)?;
 
     Ok(Json(vehicle))
+}
+
+/**
+ * Handler for updating an existing vehicle, accepts a path parameter for the vehicle ID and JSON input for the updated data.
+ */
+async fn update_vehicle(State(pool): State<PgPool>, Path(id): Path<i32>, Json(payload): Json<VehiclePayload>) -> Result<Json<Vehicle>, StatusCode> {
+    // Update the vehicle with the specified ID in the database and return the updated record
+    let vehicle = sqlx::query_as::<_, Vehicle>(
+        "UPDATE vehicles SET make = $1, model = $2, year = $3, vin = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *"
+    )
+    .bind(&payload.make)
+    .bind(&payload.model)
+    .bind(payload.year)
+    .bind(&payload.vin)
+    .bind(id)
+    .fetch_one(&pool)
+    .await
+    .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    Ok(Json(vehicle))
+}
+
+/**
+ * Handler for deleting a vehicle, accepts a path parameter for the vehicle ID and deletes the corresponding record from the database.
+ */
+async fn delete_vehicle(State(pool): State<PgPool>, Path(id): Path<i32>) -> Result<StatusCode, StatusCode> {
+    // Delete the vehicle with the specified ID from the database
+    let result = sqlx::query("DELETE FROM vehicles WHERE id = $1")
+        .bind(id)
+        .execute(&pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if result.rows_affected() == 0 {
+        return Err(StatusCode::NOT_FOUND);
+    }   
+    else {
+        return Ok(StatusCode::NO_CONTENT);
+    }
 }

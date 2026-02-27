@@ -12,7 +12,7 @@ GET http://localhost:5000/vehicles
 ###
 
 ## Get a vehicle by ID
-GET http://localhost:5000/vehicles/3
+GET http://localhost:5000/vehicles/4
 
 ###
 
@@ -21,10 +21,28 @@ POST http://localhost:5000/vehicles
 Content-Type: application/json
 
 {
+    "make": "Benz",
+    "model": "C-Class",
+    "year": 2025,
+    "vin": "WDB1234567890"
+}
+
+###
+
+## Update an existing vehicle
+POST http://localhost:5000/vehicles/3
+Content-Type: application/json
+
+{
     "make": "BYD",
-    "model": "Shark 6",
+    "model": "Shark 6 Pro",
     "year": 2026,
     "vin": "BYD1234567890"
 }
+
+###
+
+## Delete a vehicle
+DELETE http://localhost:5000/vehicles/4
 
 ###
