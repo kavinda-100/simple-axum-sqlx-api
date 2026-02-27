@@ -16,10 +16,10 @@ POST http://localhost:5000/vehicles
 Content-Type: application/json
 
 {
-    "make": "Toyota",
-    "model": "Corolla",
-    "year": 2020,
-    "vin": "1HGBH41JXMN109186"
+    "make": "BMW",
+    "model": "X5",
+    "year": 2025,
+    "vin": "5UXCR6C0XJLL12345"
 }
 
 ###

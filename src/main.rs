@@ -7,7 +7,7 @@ use dotenv::dotenv;
 use std::env;
 
 // VehicleInput struct for deserializing incoming JSON data for creating/updating vehicles
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct VehiclePayload {
     make: String,
     model: String,
@@ -16,7 +16,7 @@ struct VehiclePayload {
 }
 
 // Vehicle struct representing a record in the vehicles table
-#[derive(Serialize, FromRow)]
+#[derive(Serialize, FromRow, Debug)]
 struct Vehicle {
     id: i32,
     make: String,
@@ -74,6 +74,10 @@ async fn root_handler() -> Json<serde_json::Value> {
  * Handler for getting all vehicles, returns a list of all vehicles in the database.
  */
 async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<Vec<Vehicle>>, StatusCode> {
+    // for debugging purposes, log that we're fetching vehicles
+    println!("Fetching all vehicles from the database...");
+
+    // Fetch all vehicles from the database and return them as JSON
     let vehicles = sqlx::query_as::<_, Vehicle>("SELECT * FROM vehicles")
         .fetch_all(&pool)
         .await
@@ -86,6 +90,9 @@ async fn get_all_vehicles(State(pool): State<PgPool>) -> Result<Json<Vec<Vehicle
  * Handler for creating a new vehicle, accepts JSON input and inserts a new record into the database.
  */
 async fn create_vehicle(State(pool): State<PgPool>, Json(payload): Json<VehiclePayload>) -> Result<Json<Vehicle>, StatusCode> {
+
+    // Log the incoming payload for debugging purposes
+    println!("Received payload for creating vehicle: {:?}", payload);
 
     // Insert the new vehicle into the database and return the created record
     let vehicle = sqlx::query_as::<_, Vehicle>(
