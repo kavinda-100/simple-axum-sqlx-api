@@ -17,7 +17,7 @@ GET {{apiV1}}/vehicles
 ###
 
 ## Get a vehicle by ID
-GET {{apiV1}}/vehicles/4
+GET {{apiV1}}/vehicles/3
 
 ###
 
@@ -29,13 +29,13 @@ Content-Type: application/json
     "make": "Benz",
     "model": "C-Class",
     "year": 2025,
-    "vin": "WDB1234567852"
+    "vin": "WDB1234567855"
 }
 
 ###
 
 ## Update an existing vehicle
-POST {{apiV1}}/vehicles/3
+PUT {{apiV1}}/vehicles/3
 Content-Type: application/json
 
 {
@@ -48,6 +48,6 @@ Content-Type: application/json
 ###
 
 ## Delete a vehicle
-DELETE {{apiV1}}/vehicles/10
+DELETE {{apiV1}}/vehicles/8
 
 ###
