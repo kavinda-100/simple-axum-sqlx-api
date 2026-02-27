@@ -11,7 +11,7 @@ pub fn vehicle_routes(pool: PgPool) -> Router {
     Router::new()
         .route("/vehicles", get(get_all_vehicles).post(create_vehicle))
         .route(
-            "/vehicles/:id",
+            "/vehicles/{id}",
             get(get_vehicle_by_id)
                 .put(update_vehicle)
                 .delete(delete_vehicle),
