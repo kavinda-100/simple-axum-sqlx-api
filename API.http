@@ -11,6 +11,11 @@ GET http://localhost:5000/vehicles
 
 ###
 
+## Get a vehicle by ID
+GET http://localhost:5000/vehicles/3
+
+###
+
 ## Create a new vehicle
 POST http://localhost:5000/vehicles
 Content-Type: application/json

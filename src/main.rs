@@ -54,6 +54,7 @@ async fn main() {
         .route("/", get(root_handler))
         .route("/vehicles", get(get_all_vehicles))
         .route("/vehicles", post(create_vehicle))
+        .route("/vehicles/{id}", get(get_vehicle_by_id))
         .with_state(pool);
 
     // Start the server
@@ -106,6 +107,20 @@ async fn create_vehicle(State(pool): State<PgPool>, Json(payload): Json<VehicleP
     .fetch_one(&pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;   
+
+    Ok(Json(vehicle))
+}
+
+/**
+ * Handler for get a single vehicle by ID, accepts a path parameter and returns the corresponding vehicle record.
+ */
+async fn get_vehicle_by_id(State(pool): State<PgPool>, axum::extract::Path(id): axum::extract::Path<i32>) -> Result<Json<Vehicle>, StatusCode> {
+    // Fetch the vehicle with the specified ID from the database
+    let vehicle = sqlx::query_as::<_, Vehicle>("SELECT * FROM vehicles WHERE id = $1")
+        .bind(id)
+        .fetch_one(&pool)
+        .await
+        .map_err(|_| StatusCode::NOT_FOUND)?;
 
     Ok(Json(vehicle))
 }
