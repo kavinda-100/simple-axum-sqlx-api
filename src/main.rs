@@ -42,6 +42,12 @@ async fn main() {
         .await
         .expect("Failed to connect to the database");
 
+    // Run database migrations to ensure the vehicles table exists
+    sqlx::migrate!()
+        .run(&pool)
+        .await
+        .expect("Failed to run database migrations");
+
     // Build the application with routes
     let app = Router::new()
         .route("/", get(root_handler))
