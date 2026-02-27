@@ -143,6 +143,9 @@ async fn create_vehicle(
         }
         Err(e) => {
             eprintln!("Error creating vehicle: {:?}", e);
+            if(e.to_string().contains("duplicate key value violates unique constraint")) {
+                return Err(StatusCode::CONFLICT);
+            }
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
