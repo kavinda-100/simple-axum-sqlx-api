@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool, FromRow};
 use dotenv::dotenv;
 use std::env;
+use chrono::NaiveDateTime;
 
 // VehicleInput struct for deserializing incoming JSON data for creating/updating vehicles
 #[derive(Deserialize, Debug)]
@@ -23,8 +24,8 @@ struct Vehicle {
     model: String,
     year: i32,
     vin: String,
-    created_at: String,
-    updated_at: String,
+    created_at: NaiveDateTime,
+    updated_at: NaiveDateTime,
 }
 
 
